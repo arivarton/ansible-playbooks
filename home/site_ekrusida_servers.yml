@@ -3,7 +3,7 @@
   roles:
     - common
 
-- name: Setup common settings on servers
+- name: Setup nfs
   hosts: file_servers
   roles:
     - nfs-server
