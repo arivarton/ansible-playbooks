@@ -1,0 +1,9 @@
+- name: Do everything required to setup a mail server connected to mail.arivarton.com.
+  vars_files:
+    - vars/dev.yml
+  hosts: mailservers
+  roles:
+    - common
+    - db
+    - mail
+    - security

@@ -1,0 +1,5 @@
+main_apps: true
+main_templates: true
+common_apps: true
+common_templates: true
+ensured_apps: true

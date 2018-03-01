@@ -1,0 +1,111 @@
+# Common
+
+
+- hostname: 
+    name: "{{ new_hostname }}"
+  become: yes
+
+
+- name: Change sources.list
+  template: src="sources.list" dest="/etc/apt/"
+  become: yes
+
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  become: yes
+
+
+- name: Install common apps
+  apt: name={{ item }} state=latest
+  with_items:
+    - lshw
+    - htop
+      # vim-nox has support for scripting languages, it specifically has support for python3 which YouCompleteMe needs
+    - vim-nox
+    - rxvt-unicode
+    - zsh
+    - git
+    - curl
+    - nfs-common
+  become: yes
+  when: common_apps
+
+
+- name: Register hardware facts
+  block:
+
+    - name: Register CPU product fact
+      shell: 'lshw -c "cpu" | grep "product:" | sed -r "s/.*product: (.*)/\\1/g"'
+      register: hw_cpu_product
+    - debug:
+        msg: "cpu_product {{ hw_cpu_product.stdout }}"
+
+    - name: Register CPU vendor fact
+      shell: 'lshw -c "cpu" | grep "vendor:" | sed -r "s/.*vendor: (.*)/\1/g"'
+      register: hw_cpu_vendor
+    - debug:
+        msg: "cpu_vendor {{ hw_cpu_vendor.stdout }}"
+
+    - name: Register wifi product fact
+      shell: 'lshw -c "network" | grep "description: Wireless" -B 1 -A 12 | grep "product:" | sed -r "s/.*product: (.*)/\1/g"'
+      register: hw_wifi_product
+    - debug:
+        msg: "wifi_product {{ hw_wifi_product.stdout }}"
+
+    - name: Register wifi vendor fact
+      shell: 'lshw -c "network" | grep "description: Wireless" -B 1 -A 12 | grep "vendor:" | sed -r "s/.*vendor: (.*)/\1/g"'
+      register: hw_wifi_vendor
+    - debug:
+        msg: "hw_wifi_vendor {{ hw_wifi_vendor.stdout }}"
+
+  become: yes
+
+
+- name: Install hardware related software
+  block:
+    - name: Install Intel CPU software
+      apt: name={{ item }} state=latest
+      with_items:
+        - intel-microcode
+        - iucode-tool
+      when: "'Intel' in hw_cpu_vendor.stdout"
+    - name: Install Intel wifi software
+      apt: name=firmware-iwlwifi state=latest
+      when: "'Intel' in hw_wifi_vendor.stdout"
+  become: yes
+
+
+- name: Install oh-my-zsh
+  git: 
+    repo: https://github.com/robbyrussell/oh-my-zsh
+    dest: ~/.oh-my-zsh
+  when: common_apps
+
+
+- name: Add zsh and vim config
+  template: src="{{ item.filename }}" dest="{{ item.destination }}"
+  with_items:
+    - {destination: '/home/{{ ansible_user }}/', filename: '.zshrc'}
+    - {destination: '/home/{{ ansible_user }}/', filename: '.vimrc'}
+  when: common_templates
+
+- name: Adding Vundle to vim
+  git:
+    repo: https://github.com/VundleVim/Vundle.vim.git
+    dest: ~/.vim/bundle/Vundle.vim
+    force: yes
+
+
+- name: Install Vundle plugins
+  # shell: vim -E -s -c "source ~/.vimrc" +PluginInstall +qall -V
+  shell: vim -E -s -c "source ~/.vimrc" +PluginInstall +qall
+  ignore_errors: True
+
+
+- name: Make zsh the shell for configured user
+  user:
+    name: "{{ ansible_user }}"
+    shell: /bin/zsh
+  become: yes

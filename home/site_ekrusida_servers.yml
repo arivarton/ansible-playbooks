@@ -1,0 +1,9 @@
+- name: Setup common settings on servers
+  hosts: servers
+  roles:
+    - common
+
+- name: Setup common settings on servers
+  hosts: file_servers
+  roles:
+    - nfs-server

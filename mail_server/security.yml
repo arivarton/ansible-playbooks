@@ -1,0 +1,6 @@
+- name: Configure security settings
+  vars_files:
+    - vars/dev.yml
+  hosts: all
+  roles:
+    - security

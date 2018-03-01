@@ -1,0 +1,27 @@
+# Kodi
+
+- name: Install applications
+  apt: name={{ item }} state=latest
+  with_items:
+    - xorg
+    - xinit
+    - pulseaudio
+    - alsa-utils
+    - intel-microcode
+    - iucode-tool
+    - kodi
+    - kodi-pvr-iptvsimple
+  become: yes
+  when: main_apps
+
+- name: Add templates
+  template: src="{{ item.filename }}" dest="{{ item.destination }}"
+  with_items:
+    - { destination: "/home/{{ ansible_user }}/.kodi/userdata/addon_data/pvr.iptvsimple/", filename: 'settings.xml' }
+    - { destination: '/etc/systemd/', filename: 'logind.conf' }
+    - { destination: "/home/{{ ansible_user }}/", filename: '.xinitrc' }
+    - { destination: "/home/{{ ansible_user }}/", filename: '.profile' }
+      # getty enables automatic login
+    - { destination: '/etc/systemd/system/getty@tty1.service.d/', filename: 'override.conf' }
+  become: yes
+  when: main_templates

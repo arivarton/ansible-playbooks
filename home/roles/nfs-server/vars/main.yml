@@ -1,0 +1,4 @@
+tmux_session_name: "torrent"
+tmux_command: "tmux new-session -d -s {{ tmux_session_name }} -n 'rtorrent' rtorrent"
+slave_user: "files"
+rtorrent_base_dir: "/home/{{ slave_user }}/rtorrent/"

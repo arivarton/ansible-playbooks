@@ -1,0 +1,28 @@
+all:
+  children:
+
+    kodi_test:
+      hosts:
+        vagrant:
+          ansible_ssh_private_key_file: ~/Development/ansible/kodi-pc/.vagrant/machines/default/virtualbox/private_key
+          ansible_port: 2222
+          ansible_host: 127.0.0.1
+          ansible_user: vagrant
+
+    kodi:
+      hosts:
+        ekrusida_kodi:
+          ansible_host: 192.168.2.199
+          ansible_user: vidr
+
+    servers:
+      hosts:
+        ekrusida_server_1:
+          ansible_host: 192.168.2.9
+          ansible_user: vidr
+
+    file_servers:
+      hosts:
+        ekrusida_server_1:
+          ansible_host: 192.168.2.9
+          ansible_user: vidr

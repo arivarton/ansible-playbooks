@@ -1,0 +1,4 @@
+- name: Install postgresql
+  apt: name=postgresql state=latest
+  become: yes
+  when: main_apps

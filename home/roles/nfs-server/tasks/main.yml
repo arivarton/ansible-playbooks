@@ -1,0 +1,94 @@
+# [TODO] Add ip address configuration
+# - set_fact:
+  # tmux_command: "tmux new-session -d -s {{ tmux_session_name }} -n 'rtorrent' rtorrent"
+
+
+- name: Install nfs apps
+  apt: name={{ item }} state=latest
+  with_items:
+    - nfs-kernel-server
+    - rtorrent
+    - tmux # To start rtorrent
+  become: yes
+  when: main_apps
+
+
+- name: Add slave user
+  user:
+    name: "{{ slave_user }}"
+    comment: NFS-server
+    shell: "/bin/false"
+  become: yes
+
+- name: Add slave user group to {{ ansible_user }}
+  user:
+    name: "{{ ansible_user }}"
+    groups: "{{ slave_user }}"
+    append: yes
+  become: yes
+
+
+- name: Add config files
+  template: src="{{ item.filename }}" dest="{{ item.destination }}"
+  with_items:
+    - {destination: "/home/{{ ansible_user }}/", filename: ".rtorrent.rc"}
+    - {destination: "/etc/", filename: "exports"}
+  when: main_templates
+  become: yes
+
+
+- name: Create directories related to rtorrent and make sure {{ slave_user }} group has write access to rtorrent dir
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    mode: 0755
+  with_items:
+    - "/home/{{ ansible_user }}/.rtorrent/config.d/"
+    - "/home/{{ ansible_user}}/.rtorrent/scripts/"
+    - "{{ rtorrent_base_dir }}"
+
+
+- name: Add rtorrent configs
+  template:
+    src: "{{ item }}"
+    dest: "/home/{{ ansible_user }}/.rtorrent/config.d/"
+  with_items:
+    # [TODO] Need to install pyrocore on the server for this to work
+    # - "rtorrent_drop-in_configs/logging.rc"
+    - "rtorrent_drop-in_configs/move_on_completion.rc"
+  when: main_templates
+
+
+- name: Add rtorrent scripts
+  template:
+    src: "{{ item }}"
+    dest: "/home/{{ ansible_user }}/.rtorrent/scripts/"
+  with_items:
+    - "rtorrent_scripts/completion-path.sh"
+  when: main_templates
+
+
+- name: Enable and restart nfs server
+  systemd:
+    name: nfs-kernel-server
+    state: restarted
+    enabled: yes
+    masked: no
+  become: yes
+
+
+- name: Kill existing rtorrent tmux session
+  shell: "tmux kill-session -t {{ tmux_session_name }}"
+  ignore_errors: True
+
+- name: Start rtorrent in tmux
+  shell: "{{ tmux_command }}"
+  ignore_errors: True
+  
+
+- name: Make crontab start rtorrent for {{ ansible_user }} on each reboot
+  cron:
+    user: "{{ ansible_user }}"
+    job: "{{ tmux_command }}"
+    special_time: reboot

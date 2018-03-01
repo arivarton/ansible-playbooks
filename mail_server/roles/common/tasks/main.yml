@@ -1,0 +1,14 @@
+- name: Install htop
+  apt: name=htop state=latest
+  become: yes
+  when: common_apps
+
+- name: Install vim
+  apt: name=vim state=latest
+  become: yes
+  when: common_apps
+
+- name: Install netstat
+  apt: name=netstat-nat state=latest
+  become: yes
+  when: common_apps

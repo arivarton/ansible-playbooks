@@ -1,0 +1,5 @@
+- name: Setup a kodi display PC
+  hosts: kodi_test
+  roles:
+    - common
+    - kodi-pc
